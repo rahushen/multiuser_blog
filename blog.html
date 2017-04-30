@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+  {% for blog in blogs %}
+    <div class="title"><h3>{{blog.title}}</h3></div>
+    <br>
+    <div class="text"><pre>{{blog.body}}</pre></div>
+    <br>
+  {% endfor %}
+{% endblock %}
