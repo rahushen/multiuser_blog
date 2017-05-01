@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if blog %}
+  <form method="post">
+  TITLE <input name="subject" type="text" value="{{blog.title}}">
+  <br>
+  TEXT <textarea name="content" value="">{{blog.body}}</textarea>
+  <br>
+  {{error}}
+  <br>
+  <input type="submit">
+  </form>
+  {% else %}
+    {{permission_error}}
+  {% endif %}
+{% endblock %}

@@ -3,4 +3,19 @@
     <div class="title"><h3>{{blog.title}}</h3></div>
     <br>
     <div class="text"><pre>{{blog.body}}</pre></div>
+    <br>
+    <form method="post" action="/blog/{{blog.key().id()}}/togglelike">
+    {% if user_id in blog.liked %}
+    <input type="submit" value="Unlike">
+    {% else %}
+    <input type="submit" value="Like">
+    {% endif %}
+    </form>
+    <form method="get" action="/blog/{{blog.key().id()}}/edit">
+    <input type="submit" value="Edit">
+    </form>
+    <form method="post" action="/blog/{{blog.key().id()}}/delete">
+    <input type="submit" value="Delete">
+    </form>
+    {{error}}
 {% endblock %}

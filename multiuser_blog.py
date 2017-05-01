@@ -20,6 +20,7 @@ import hashlib
 import random
 from string import letters
 from google.appengine.ext import db
+import time
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -78,6 +79,11 @@ class Blog(db.Model):
     user_id = db.IntegerProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
+    liked = db.ListProperty(int)
+
+    @classmethod
+    def by_id(cls, uid):
+        return cls.get_by_id(uid)
 
 
 class User(db.Model):
@@ -166,8 +172,98 @@ class NewBlogPage(AppHandler):
 
 class BlogEntryPage(AppHandler):
     def get(self, post_id):
-        blog = Blog.get_by_id(int(post_id))
-        self.render('blogpost.html', blog=blog)
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            blog = Blog.get_by_id(int(post_id))
+            if blog:
+                self.render('blogpost.html', blog=blog, user_id=user_id)
+            else:
+                self.redirect('/blog/permissionerror/')
+        else:
+            self.redirect('/blog/signup')
+
+
+class EditBlogPage(AppHandler):
+    def get(self, post_id):
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            blog = Blog.by_id(int(post_id))
+            if blog.user_id == user_id:
+                self.render('editblog.html', blog=blog)
+            else:
+                error = 'Only the Blog owner can edit this blog post.'
+                self.render('blogpost.html', blog=blog, error=error,
+                            user_id=user_id)
+        else:
+            self.redirect('/blog/signup')
+
+    def post(self, post_id):
+        title = self.request.get('subject')
+        text = self.request.get('content')
+        blog_id = post_id
+        if title and text:
+            user_cookie = self.read_cookie('user_id')
+            if user_cookie:
+                blog = Blog.by_id(int(blog_id))
+                blog.title = title
+                blog.body = text
+                key = blog.put()
+                keyid = key.id()
+                self.redirect("/blog/%d" % keyid)
+            else:
+                self.redirect('/blog/signup')
+        else:
+            error = 'Both fields are required.'
+            self.render('newblog.html', error=error, title=title,
+                        text=text)
+
+
+class DeleteBlogPage(AppHandler):
+    def post(self, post_id):
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            blog = Blog.by_id(int(post_id))
+            if blog:
+                if blog.user_id == user_id:
+                    db.delete(blog.key())
+                    time.sleep(1)
+                    self.redirect('/blog')
+                else:
+                    error = 'Only the Blog owner can delete this blog post.'
+                    self.render('blogpost.html', blog=blog, error=error,
+                                user_id=user_id)
+            else:
+                self.render('permissionerror.html')
+        else:
+            self.redirect('/blog/signup')
+
+
+class ToggleLike(AppHandler):
+    def post(self, post_id):
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            blog = Blog.by_id(int(post_id))
+            if blog:
+                if blog.user_id == user_id:
+                    error = "You can't like your own posts."
+                    self.render('blogpost.html', blog=blog, error=error,
+                                user_id=user_id)
+                else:
+                    if user_id in blog.liked:
+                        blog.liked.remove(user_id)
+                        blog.put()
+                    else:
+                        blog.liked.append(user_id)
+                        blog.put()
+                    self.redirect('/blog/%d' % blog.key().id())
+            else:
+                self.render('permissionerror.html')
+        else:
+            self.redirect('/blog/signup')
 
 
 class BlogPage(AppHandler):
@@ -251,12 +347,21 @@ class Welcome(AppHandler):
             self.redirect('/blog/signup')
 
 
+class PermissionErr(AppHandler):
+    def get(self):
+        self.render('permissionerror.html')
+
+
 app = webapp2.WSGIApplication([
     (r'/blog/?', BlogPage),
     (r'/blog/newpost/?', NewBlogPage),
     (r'/blog/(\d+)/?', BlogEntryPage),
+    (r'/blog/(\d+)/edit/?', EditBlogPage),
+    (r'/blog/(\d+)/delete/?', DeleteBlogPage),
+    (r'/blog/(\d+)/togglelike/?', ToggleLike),
     (r'/blog/signup/?', Register),
     (r'/blog/login/?', Login),
     (r'/blog/logout/?', Logout),
     (r'/blog/welcome/?', Welcome),
+    (r'/blog/permissionerror/?', PermissionErr),
 ], debug=True)
