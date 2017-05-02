@@ -169,39 +169,45 @@ class AppHandler(webapp2.RequestHandler):
         self.response.headers.add_header('Set-Cookie',
                                          'user_id=; Path=/')
 
+    def initialize(self, *args, **kwargs):
+        webapp2.RequestHandler.initialize(self, *args, **kwargs)
+        user_id = self.read_cookie('user_id')
+        if user_id and User.by_id(int(user_id)):
+            self.user_id = int(user_id)
+        else:
+            self.user_id = None
+
 
 class NewBlogPage(AppHandler):
     def get(self):
-        self.render('newblog.html')
+        if self.user_id:
+            self.render('newblog.html')
+        else:
+            self.redirect('/blog/signup')
 
     def post(self):
-        title = self.request.get('subject')
-        text = self.request.get('content')
-        if title and text:
-            user_cookie = self.read_cookie('user_id')
-            if user_cookie:
-                user_id = int(user_cookie.split('|')[0])
-                blog = Blog(title=title, body=text, user_id=user_id)
-                key = blog.put()
-                keyid = key.id()
-                self.redirect("/blog/%d" % keyid)
+        if self.user_id:
+            title = self.request.get('subject')
+            text = self.request.get('content')
+            if title and text:
+                blog = Blog(title=title, body=text, user_id=self.user_id)
+                blog_id = blog.put().id()
+                self.redirect("/blog/%d" % blog_id)
             else:
-                self.redirect('/blog/signup')
+                error = 'Both fields are required.'
+                self.render('newblog.html', error=error, title=title,
+                            text=text)
         else:
-            error = 'Both fields are required.'
-            self.render('newblog.html', error=error, title=title,
-                        text=text)
+            self.redirect('/blog/signup')
 
 
 class BlogEntryPage(AppHandler):
     def get(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
             blog = Blog.get_by_id(int(post_id))
             comments = Comment.by_blog(post_id)
             if blog:
-                self.render('blogpost.html', blog=blog, user_id=user_id,
+                self.render('blogpost.html', blog=blog, user_id=self.user_id,
                             comments=comments)
             else:
                 self.redirect('/blog/permissionerror/')
@@ -211,60 +217,53 @@ class BlogEntryPage(AppHandler):
 
 class EditBlogPage(AppHandler):
     def get(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
             blog = Blog.by_id(int(post_id))
             comments = Comment.by_blog(post_id)
             if blog:
-                if blog.user_id == user_id:
+                if blog.user_id == self.user_id:
                     self.render('editblog.html', blog=blog)
                 else:
                     error = 'Only the Blog owner can edit this blog post.'
                     self.render('blogpost.html', blog=blog, error=error,
-                                user_id=user_id, comments=comments)
+                                user_id=self.user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
             self.redirect('/blog/signup')
 
     def post(self, post_id):
-        title = self.request.get('subject')
-        text = self.request.get('content')
-        blog_id = post_id
-        if title and text:
-            user_cookie = self.read_cookie('user_id')
-            if user_cookie:
-                blog = Blog.by_id(int(blog_id))
+        if self.user_id:
+            title = self.request.get('subject')
+            text = self.request.get('content')
+            if title and text:
+                blog = Blog.by_id(int(post_id))
                 blog.title = title
                 blog.body = text
-                key = blog.put()
-                keyid = key.id()
-                self.redirect("/blog/%d" % keyid)
+                blog.put()
+                self.redirect("/blog/%d" % int(post_id))
             else:
-                self.redirect('/blog/signup')
+                error = 'Both fields are required.'
+                self.render('editblog.html', error=error, title=title,
+                            text=text)
         else:
-            error = 'Both fields are required.'
-            self.render('editblog.html', error=error, title=title,
-                        text=text)
+            self.redirect('/blog/signup')
 
 
 class DeleteBlogPage(AppHandler):
     def post(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
             blog = Blog.by_id(int(post_id))
             comments = Comment.by_blog(post_id)
             if blog:
-                if blog.user_id == user_id:
+                if blog.user_id == self.user_id:
                     db.delete(blog.key())
                     time.sleep(1)
                     self.redirect('/blog')
                 else:
                     error = 'Only the Blog owner can delete this blog post.'
                     self.render('blogpost.html', blog=blog, error=error,
-                                user_id=user_id, comments=comments)
+                                user_id=self.user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
@@ -273,9 +272,8 @@ class DeleteBlogPage(AppHandler):
 
 class ToggleLike(AppHandler):
     def post(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
+            user_id = self.user_id
             blog = Blog.by_id(int(post_id))
             comments = Comment.by_blog(post_id)
             if blog:
@@ -290,7 +288,7 @@ class ToggleLike(AppHandler):
                     else:
                         blog.liked.append(user_id)
                         blog.put()
-                    self.redirect('/blog/%d' % blog.key().id())
+                    self.redirect('/blog/%d' % int(post_id))
             else:
                 self.render('permissionerror.html')
         else:
@@ -299,27 +297,25 @@ class ToggleLike(AppHandler):
 
 class AddComment(AppHandler):
     def post(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
             blog = Blog.by_id(int(post_id))
-            comments = Comment.by_blog(post_id)
             text = self.request.get('text')
             if blog:
                 if not text:
-                    comment_error = "Can't post empty comment"
+                    comment_error = "Can't post empty comment."
+                    comments = Comment.by_blog(post_id)
                     self.render('blogpost.html', blog=blog,
                                 comment_error=comment_error,
-                                user_id=user_id, comments=comments)
+                                user_id=self.user_id, comments=comments)
                 else:
-                    comment = Comment(blog_id=blog.key().id(),
-                                      user_id=int(user_id),
+                    comment = Comment(blog_id=int(post_id),
+                                      user_id=self.user_id,
                                       text=text)
                     comment.put()
                     time.sleep(1)
                     comments = Comment.by_blog(post_id)
                     self.render('blogpost.html', blog=blog,
-                                user_id=user_id, comments=comments)
+                                user_id=self.user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
@@ -328,14 +324,12 @@ class AddComment(AppHandler):
 
 class DeleteComment(AppHandler):
     def post(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
             comment = Comment.by_id(int(post_id))
             if comment:
                 blog_id = comment.blog_id
                 blog = Blog.by_id(blog_id)
-                if comment.user_id == user_id:
+                if comment.user_id == self.user_id:
                     db.delete(comment.key())
                     time.sleep(1)
                     self.redirect('/blog/%d' % blog_id)
@@ -344,7 +338,7 @@ class DeleteComment(AppHandler):
                                     can delete this comment."""
                     comments = Comment.by_blog(blog_id)
                     self.render('blogpost.html', blog=blog,
-                                user_id=user_id,
+                                user_id=self.user_id,
                                 comments=comments,
                                 comment_error_id=int(post_id),
                                 comment_error=comment_error)
@@ -357,12 +351,10 @@ class DeleteComment(AppHandler):
 
 class EditComment(AppHandler):
     def get(self, post_id):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user_id = int(cookie.split('|')[0])
+        if self.user_id:
             comment = Comment.by_id(int(post_id))
             if comment:
-                if comment.user_id == user_id:
+                if comment.user_id == self.user_id:
                     self.render('editcomment.html', comment=comment)
                 else:
                     comment_error = """Only the Commenter
@@ -371,7 +363,7 @@ class EditComment(AppHandler):
                     blog = Blog.by_id(blog_id)
                     comments = Comment.by_blog(blog_id)
                     self.render('blogpost.html', blog=blog,
-                                user_id=user_id,
+                                user_id=self.user_id,
                                 comments=comments,
                                 comment_error_id=int(post_id),
                                 comment_error=comment_error)
@@ -382,21 +374,20 @@ class EditComment(AppHandler):
             self.redirect('/blog/signup')
 
     def post(self, post_id):
-        text = self.request.get('content')
-        if text:
-            user_cookie = self.read_cookie('user_id')
-            if user_cookie:
+        if self.user_id:
+            text = self.request.get('content')
+            if text:
                 comment = Comment.by_id(int(post_id))
                 comment.text = text
                 comment.put()
                 time.sleep(1)
                 self.redirect("/blog/%d" % comment.blog_id)
             else:
-                self.redirect('/blog/signup')
+                error = "Comment cannot be blank."
+                self.render('editcomment.html', error=error,
+                            text=text)
         else:
-            error = "Comment cannot be blank."
-            self.render('editcomment.html', error=error,
-                        text=text)
+            self.redirect('/blog/signup')
 
 
 class BlogPage(AppHandler):
@@ -472,9 +463,8 @@ class Logout(AppHandler):
 
 class Welcome(AppHandler):
     def get(self):
-        cookie = self.read_cookie('user_id')
-        if cookie:
-            user = User.by_id(int(cookie.split('|')[0]))
+        if self.user_id:
+            user = User.by_id(self.user_id)
             self.render('welcome.html', username=user.username)
         else:
             self.redirect('/blog/signup')
