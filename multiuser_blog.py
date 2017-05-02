@@ -113,6 +113,25 @@ class User(db.Model):
             return uname
 
 
+class Comment(db.Model):
+    user_id = db.IntegerProperty(required=True)
+    blog_id = db.IntegerProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    text = db.TextProperty(required=True)
+
+    @classmethod
+    def by_blog(cls, blog_id):
+        query = db.GqlQuery('''SELECT * FROM Comment WHERE blog_id = %s
+                            ORDER BY created DESC''' % blog_id)
+        comments = query.fetch(100)
+        return comments
+
+    def get_username(self):
+        user_id = self.user_id
+        user = User.by_id(user_id)
+        return user.username
+
+
 class AppHandler(webapp2.RequestHandler):
     def write(self, *args, **kwargs):
         return self.response.out.write(*args, **kwargs)
@@ -176,8 +195,10 @@ class BlogEntryPage(AppHandler):
         if cookie:
             user_id = int(cookie.split('|')[0])
             blog = Blog.get_by_id(int(post_id))
+            comments = Comment.by_blog(post_id)
             if blog:
-                self.render('blogpost.html', blog=blog, user_id=user_id)
+                self.render('blogpost.html', blog=blog, user_id=user_id,
+                            comments=comments)
             else:
                 self.redirect('/blog/permissionerror/')
         else:
@@ -190,12 +211,13 @@ class EditBlogPage(AppHandler):
         if cookie:
             user_id = int(cookie.split('|')[0])
             blog = Blog.by_id(int(post_id))
+            comments = Comment.by_blog(post_id)
             if blog.user_id == user_id:
                 self.render('editblog.html', blog=blog)
             else:
                 error = 'Only the Blog owner can edit this blog post.'
                 self.render('blogpost.html', blog=blog, error=error,
-                            user_id=user_id)
+                            user_id=user_id, comments=comments)
         else:
             self.redirect('/blog/signup')
 
@@ -226,6 +248,7 @@ class DeleteBlogPage(AppHandler):
         if cookie:
             user_id = int(cookie.split('|')[0])
             blog = Blog.by_id(int(post_id))
+            comments = Comment.by_blog(post_id)
             if blog:
                 if blog.user_id == user_id:
                     db.delete(blog.key())
@@ -234,7 +257,7 @@ class DeleteBlogPage(AppHandler):
                 else:
                     error = 'Only the Blog owner can delete this blog post.'
                     self.render('blogpost.html', blog=blog, error=error,
-                                user_id=user_id)
+                                user_id=user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
@@ -247,11 +270,12 @@ class ToggleLike(AppHandler):
         if cookie:
             user_id = int(cookie.split('|')[0])
             blog = Blog.by_id(int(post_id))
+            comments = Comment.by_blog(post_id)
             if blog:
                 if blog.user_id == user_id:
                     error = "You can't like your own posts."
                     self.render('blogpost.html', blog=blog, error=error,
-                                user_id=user_id)
+                                user_id=user_id, comments=comments)
                 else:
                     if user_id in blog.liked:
                         blog.liked.remove(user_id)
@@ -260,6 +284,35 @@ class ToggleLike(AppHandler):
                         blog.liked.append(user_id)
                         blog.put()
                     self.redirect('/blog/%d' % blog.key().id())
+            else:
+                self.render('permissionerror.html')
+        else:
+            self.redirect('/blog/signup')
+
+
+class AddComment(AppHandler):
+    def post(self, post_id):
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            blog = Blog.by_id(int(post_id))
+            comments = Comment.by_blog(post_id)
+            text = self.request.get('text')
+            if blog:
+                if not text:
+                    comment_error = "Can't post empty comment"
+                    self.render('blogpost.html', blog=blog,
+                                comment_error=comment_error,
+                                user_id=user_id, comments=comments)
+                else:
+                    comment = Comment(blog_id=blog.key().id(),
+                                      user_id=int(user_id),
+                                      text=text)
+                    comment.put()
+                    time.sleep(1)
+                    comments = Comment.by_blog(post_id)
+                    self.render('blogpost.html', blog=blog,
+                                user_id=user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
@@ -359,6 +412,7 @@ app = webapp2.WSGIApplication([
     (r'/blog/(\d+)/edit/?', EditBlogPage),
     (r'/blog/(\d+)/delete/?', DeleteBlogPage),
     (r'/blog/(\d+)/togglelike/?', ToggleLike),
+    (r'/blog/(\d+)/addcomment/?', AddComment),
     (r'/blog/signup/?', Register),
     (r'/blog/login/?', Login),
     (r'/blog/logout/?', Logout),

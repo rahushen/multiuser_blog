@@ -18,4 +18,17 @@
     <input type="submit" value="Delete">
     </form>
     {{error}}
+    <br>
+    <form method="post" action="/blog/{{blog.key().id()}}/addcomment">
+    Comment <textarea name="text" value=""></textarea>
+    <br>
+    <input type="submit" value="Add Comment">
+    </form>
+    {% for comment in comments %}
+      <hr>
+      <div class="title"><h3>{{comment.get_username()}}</h3></div>
+      <br>
+      <div class="text"><pre>{{comment.text}}</pre></div>
+      <br>
+    {% endfor %}
 {% endblock %}
