@@ -28,39 +28,72 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
+# Global Variables
+
+# Random secret to add to hashes
 SECRET = 'ldkasfhalasfgKEAHKRAK5758I0$%^&SLADHSLAKHDFL2814062148afo734'
+
+# Regular expressions to validate Registration form
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 PASS_RE = re.compile(r"^.{3,20}$")
 EMAIL_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
 
 
 def valid_username(username):
+    """
+    Validates that the username provided matches the regular expression.
+    Returns True if valid.
+    """
     return USER_RE.match(username)
 
 
 def valid_password(password):
+    """
+    Validates that the password provided is between 3 and 20 characters.
+    Returns True if valid.
+    """
     return PASS_RE.match(password)
 
 
 def valid_email(email):
+    """
+    Validates that the email provided has proper syntax.
+    Returns True if valid.
+    """
     return EMAIL_RE.match(email)
 
 
 def make_secure_val(val):
+    """
+    Uses Hmac and a random secret to create a hash from val.
+    Retruns string of the format "val|hash".
+    """
     return "%s|%s" % (val, hmac.new(SECRET, val).hexdigest())
 
 
 def check_secure_val(secure_val):
+    """
+    Take a string argument of format "val|hash" and returns val if
+    hash(val) == hash
+    """
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
 
 
 def make_salt(length=5):
+    """
+    Returns a random string of letters
+    """
     return ''.join(random.choice(letters) for x in xrange(length))
 
 
 def make_pw_hash(pw, salt=None):
+    """
+    Uses sha256 to hash a password.
+    Salt is created if none is provided.
+    Return string of the format "salt|password_hash"
+    """
     if not salt:
         salt = make_salt()
     pw_hash = hashlib.sha256(pw + salt).hexdigest()
@@ -68,12 +101,26 @@ def make_pw_hash(pw, salt=None):
 
 
 def validate_pw(pw, h):
+    """
+    Validats password by verifying if hash values match.
+    Returns hash of password is password is valid.
+    """
     salt = h.split('|')[0]
     if h == make_pw_hash(pw, salt):
         return h
 
 
 class Blog(db.Model):
+    """ This is a class that holds information about blogs.
+        Attributes:
+            title (string): The title of the blog.
+            body (text): The content of the blog.
+            user_id (int): User_id of the author.
+            created (datetime) : time and date when blog was created.
+            last_moodifed (datetime): time and date when blog was last
+                                      modified.
+            liked (list of int): list of user_ids who like the blog.
+    """
     title = db.StringProperty(required=True)
     body = db.TextProperty(required=True)
     user_id = db.IntegerProperty(required=True)
@@ -83,24 +130,37 @@ class Blog(db.Model):
 
     @classmethod
     def by_id(cls, uid):
+        """Fetches a blog by id."""
         return cls.get_by_id(uid)
 
 
 class User(db.Model):
+    """ This is a class that holds information about users.
+        Attributes:
+            username (string): The name of the user.
+            pw_hash (string): Hash of the user's password.
+            email (string): User's email id.
+    """
     username = db.StringProperty(required=True)
     pw_hash = db.StringProperty(required=True)
     email = db.StringProperty()
 
     @classmethod
     def by_id(cls, uid):
+        """Fetches a user by id and returns it."""
         return cls.get_by_id(uid)
 
     @classmethod
     def by_name(cls, username):
+        """Fetches a user by username and returns it."""
         return cls.all().filter('username =', username).get()
 
     @classmethod
     def register(cls, username, password, email=None):
+        """
+        Registers a user by creating a new user in the Db.
+        Stores the username, password hash and email-id.
+        """
         pw_hash = make_pw_hash(password)
         return cls(username=username,
                    pw_hash=pw_hash,
@@ -108,12 +168,23 @@ class User(db.Model):
 
     @classmethod
     def login(cls, username, pw):
+        """
+        Logs a user in if the password validation is successful.
+        Returns the username on success.
+        """
         uname = cls.by_name(username)
         if uname and validate_pw(pw, uname.pw_hash):
             return uname
 
 
 class Comment(db.Model):
+    """ This is a class that holds information about comments.
+        Attributes:
+            user_id (int): The id of the user that wrote the comment.
+            blog_id (int): The id of the blog where the comment was written.
+            created (datetime): Date and time when the comment was written.
+            text (text): Text of the comment.
+    """
     user_id = db.IntegerProperty(required=True)
     blog_id = db.IntegerProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
@@ -121,55 +192,74 @@ class Comment(db.Model):
 
     @classmethod
     def by_id(cls, uid):
+        """Fetches a comment by id and returns it."""
         return cls.get_by_id(uid)
 
     @classmethod
     def by_blog(cls, blog_id):
+        """Fetches the latest 100 comments by blog id and returns it."""
         query = db.GqlQuery('''SELECT * FROM Comment WHERE blog_id = %s
                             ORDER BY created DESC''' % blog_id)
         comments = query.fetch(100)
         return comments
 
     def get_username(self):
+        """Returns the username of the user who wrote the comment."""
         user_id = self.user_id
         user = User.by_id(user_id)
         return user.username
 
 
 class AppHandler(webapp2.RequestHandler):
+    """ Wrapper class to the Google App Engine Request Handler."""
     def write(self, *args, **kwargs):
+        """Wrapper for response.out.write()"""
         return self.response.out.write(*args, **kwargs)
 
     def render_str(self, template, **params):
+        """ renders a template with the params"""
         t = JINJA_ENVIRONMENT.get_template(template)
         return t.render(params)
 
     def render(self, template, **kwargs):
+        """displays the template on the browser"""
         self.write(self.render_str(template, **kwargs))
 
     def render_dict(self, template, d):
+        """renders a template with the dictionary"""
         t = JINJA_ENVIRONMENT.get_template(template)
         return self.write(t.render(d))
 
     def set_cookie(self, name, val):
+        """Sets a cookie 'user_id' with the userid and val"""
         cookie_val = make_secure_val(val)
         self.response.headers.add_header(
             'Set-Cookie',
             '%s=%s; Path=/' % (name, cookie_val))
 
     def read_cookie(self, name):
+        """Return the cookie val if it exists and passes validation"""
         cookie_val = self.request.cookies.get(name)
         if cookie_val:
             return check_secure_val(cookie_val)
 
     def login(self, user):
+        """
+        Creates a cookie called user_id and sets the val to the user_id|hash
+        """
         self.set_cookie('user_id', str(user.key().id()))
 
     def logout(self):
+        """
+        Sets the value of the cookie user_id to none.
+        """
         self.response.headers.add_header('Set-Cookie',
                                          'user_id=; Path=/')
 
     def initialize(self, *args, **kwargs):
+        """
+        Checks to see if user_id cookie is present or not.
+        """
         webapp2.RequestHandler.initialize(self, *args, **kwargs)
         user_id = self.read_cookie('user_id')
         if user_id and User.by_id(int(user_id)):
