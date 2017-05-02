@@ -30,5 +30,16 @@
       <br>
       <div class="text"><pre>{{comment.text}}</pre></div>
       <br>
+      <form method="get" action="/blog/comment/{{comment.key().id()}}/edit">
+      <input type="submit" value="Edit">
+      </form>
+      <form method="post" action="/blog/comment/{{comment.key().id()}}/delete">
+      <input type="submit" value="Delete">
+      </form>
+      {% if comment_error_id%}
+        {% if comment_error_id == comment.key().id() %}
+          {{comment_error}}
+        {% endif %}
+      {% endif %}
     {% endfor %}
 {% endblock %}

@@ -120,6 +120,10 @@ class Comment(db.Model):
     text = db.TextProperty(required=True)
 
     @classmethod
+    def by_id(cls, uid):
+        return cls.get_by_id(uid)
+
+    @classmethod
     def by_blog(cls, blog_id):
         query = db.GqlQuery('''SELECT * FROM Comment WHERE blog_id = %s
                             ORDER BY created DESC''' % blog_id)
@@ -212,12 +216,15 @@ class EditBlogPage(AppHandler):
             user_id = int(cookie.split('|')[0])
             blog = Blog.by_id(int(post_id))
             comments = Comment.by_blog(post_id)
-            if blog.user_id == user_id:
-                self.render('editblog.html', blog=blog)
+            if blog:
+                if blog.user_id == user_id:
+                    self.render('editblog.html', blog=blog)
+                else:
+                    error = 'Only the Blog owner can edit this blog post.'
+                    self.render('blogpost.html', blog=blog, error=error,
+                                user_id=user_id, comments=comments)
             else:
-                error = 'Only the Blog owner can edit this blog post.'
-                self.render('blogpost.html', blog=blog, error=error,
-                            user_id=user_id, comments=comments)
+                self.render('permissionerror.html')
         else:
             self.redirect('/blog/signup')
 
@@ -238,7 +245,7 @@ class EditBlogPage(AppHandler):
                 self.redirect('/blog/signup')
         else:
             error = 'Both fields are required.'
-            self.render('newblog.html', error=error, title=title,
+            self.render('editblog.html', error=error, title=title,
                         text=text)
 
 
@@ -317,6 +324,79 @@ class AddComment(AppHandler):
                 self.render('permissionerror.html')
         else:
             self.redirect('/blog/signup')
+
+
+class DeleteComment(AppHandler):
+    def post(self, post_id):
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            comment = Comment.by_id(int(post_id))
+            if comment:
+                blog_id = comment.blog_id
+                blog = Blog.by_id(blog_id)
+                if comment.user_id == user_id:
+                    db.delete(comment.key())
+                    time.sleep(1)
+                    self.redirect('/blog/%d' % blog_id)
+                else:
+                    comment_error = """Only the Commenter
+                                    can delete this comment."""
+                    comments = Comment.by_blog(blog_id)
+                    self.render('blogpost.html', blog=blog,
+                                user_id=user_id,
+                                comments=comments,
+                                comment_error_id=post_id,
+                                comment_error=comment_error)
+            else:
+                self.render('permissionerror.html',
+                            error="Comment doesn't exist")
+        else:
+            self.redirect('/blog/signup')
+
+
+class EditComment(AppHandler):
+    def get(self, post_id):
+        cookie = self.read_cookie('user_id')
+        if cookie:
+            user_id = int(cookie.split('|')[0])
+            comment = Comment.by_id(int(post_id))
+            if comment:
+                if comment.user_id == user_id:
+                    self.render('editcomment.html', comment=comment)
+                else:
+                    comment_error = """Only the Commenter
+                                    can edit this comment."""
+                    blog_id = comment.blog_id
+                    blog = Blog.by_id(blog_id)
+                    comments = Comment.by_blog(blog_id)
+                    self.render('blogpost.html', blog=blog,
+                                user_id=user_id,
+                                comments=comments,
+                                comment_error_id=post_id,
+                                comment_error=comment_error)
+            else:
+                self.render('permissionerror.html',
+                            error="Comment doesn't exist")
+        else:
+            self.redirect('/blog/signup')
+
+    def post(self, post_id):
+        text = self.request.get('content')
+        if text:
+            user_cookie = self.read_cookie('user_id')
+            if user_cookie:
+                comment = Comment.by_id(int(post_id))
+                comment.text = text
+                comment.put()
+                time.sleep(1)
+                self.redirect("/blog/%d" % comment.blog_id)
+            else:
+                self.redirect('/blog/signup')
+        else:
+            error = "Comment cannot be blank."
+            self.render('editcomment.html', error=error,
+                        text=text)
 
 
 class BlogPage(AppHandler):
@@ -413,6 +493,8 @@ app = webapp2.WSGIApplication([
     (r'/blog/(\d+)/delete/?', DeleteBlogPage),
     (r'/blog/(\d+)/togglelike/?', ToggleLike),
     (r'/blog/(\d+)/addcomment/?', AddComment),
+    (r'/blog/comment/(\d+)/delete/?', DeleteComment),
+    (r'/blog/comment/(\d+)/edit/?', EditComment),
     (r'/blog/signup/?', Register),
     (r'/blog/login/?', Login),
     (r'/blog/logout/?', Logout),

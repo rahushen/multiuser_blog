@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if comment %}
+  <form method="post">
+  TEXT <textarea name="content" value="">{{comment.text}}</textarea>
+  <br>
+  {{error}}
+  <br>
+  <input type="submit" value="Save">
+  </form>
+  {% else %}
+    {{permission_error}}
+  {% endif %}
+{% endblock %}
