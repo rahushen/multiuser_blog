@@ -36,7 +36,7 @@
       <form method="post" action="/blog/comment/{{comment.key().id()}}/delete">
       <input type="submit" value="Delete">
       </form>
-      {% if comment_error_id%}
+      {% if comment_error_id %}
         {% if comment_error_id == comment.key().id() %}
           {{comment_error}}
         {% endif %}

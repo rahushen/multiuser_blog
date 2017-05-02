@@ -346,7 +346,7 @@ class DeleteComment(AppHandler):
                     self.render('blogpost.html', blog=blog,
                                 user_id=user_id,
                                 comments=comments,
-                                comment_error_id=post_id,
+                                comment_error_id=int(post_id),
                                 comment_error=comment_error)
             else:
                 self.render('permissionerror.html',
@@ -373,7 +373,7 @@ class EditComment(AppHandler):
                     self.render('blogpost.html', blog=blog,
                                 user_id=user_id,
                                 comments=comments,
-                                comment_error_id=post_id,
+                                comment_error_id=int(post_id),
                                 comment_error=comment_error)
             else:
                 self.render('permissionerror.html',
