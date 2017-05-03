@@ -1,18 +1,36 @@
 {% extends "base.html" %}
 {% block content%}
-<h1>Signup</h1>
-<br>
-<form method="post">
-  Username <input type="text" name ="username" value="{{ username }}"> {{username_error}}
+  <h2>Signup</h2>
   <br>
-  Password <input type="password" name ="password"> {{password_error}}
+  <form method="post">
+    <div>
+      <label class="register-label">Username</label>
+      <input class="register-text" type="text" name ="username" value="{{ username }}">
+      <text class="error">{{username_error}}</text>
+    </div>
+    <br>
+    <div>
+      <label class="register-label">Password</label>
+      <input class="register-text" type="password" name ="password">
+      <text class="error">{{password_error}}</text>
+    </div>
+    <br>
+    <div>
+      <label class="register-label">Verify Password</label>
+      <input class="register-text" type="password" name ="verify">
+      <text class="error">{{verify_error}}</text>
+    </div>
+    <br>
+    <div>
+      <label class="register-label">Email (optional)</label>
+      <input class="register-text" type="text" name ="email" value="{{ email }}">
+      <text class="error">{{email_error}}</p>
+    </div>
+    <br>
+    <div>
+      <input type="submit">
+    </div>
+  </form>
   <br>
-  Verify Password <input type="password" name ="verify"> {{verify_error}}
-  <br>
-  Email (optional) <input type="text" name ="email" value="{{ email }}"> {{email_error}}
-  <br>
-  <input type="submit">
-</form>
-<br>
-<h4>Registered Already? <a href="/blog/login">Login</a> Here</h4>
+  <h4>Registered Already? <a href="/blog/login">Login</a> Here</h4>
 {% endblock %}

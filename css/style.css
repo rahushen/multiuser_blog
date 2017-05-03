@@ -1,0 +1,54 @@
+input, label {
+    display: inline-block;
+}
+
+.title-center {
+  font-weight: 100;
+  text-align: center;
+}
+
+.register-label {
+  width: 120px;
+}
+
+.login-label, .newpost-label, .comment-label {
+  width: 75px;
+}
+
+.register-text, .login-text {
+  width:200px;
+}
+
+.newpost-text {
+  width: 700px;
+}
+
+.newpost-textarea {
+  width:  700px;
+  height: 500px;
+}
+
+.comment-textarea {
+  width: 500px;
+  height: 250px;
+}
+
+.comment-textarea-small {
+  width: 500px;
+  height: 100px;
+}
+
+.blog-title, .comment-title {
+  margin-bottom: 0;
+}
+
+.blog-text, .comment-text {
+  margin-top: 0;
+}
+.error {
+  color: red;
+}
+
+.like-form, .delete-form, .edit-form {
+    display: inline-block;
+}

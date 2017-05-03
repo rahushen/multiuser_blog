@@ -1,16 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
-  {% if blog %}
+  <h2>Edit Blog</h2>
   <form method="post">
-  TITLE <input name="subject" type="text" value="{{blog.title}}">
-  <br>
-  TEXT <textarea name="content" value="">{{blog.body}}</textarea>
-  <br>
-  {{error}}
-  <br>
-  <input type="submit">
+    <div>
+      <label class="newpost-label">Title</label>
+      <input class="newpost-text" name="subject" type="text" value="{{blog.title}}">
+    </div>
+    <br>
+    <div>
+      <label class="newpost-label">Content</label>
+      <textarea class="newpost-textarea" name="content" value="">{{blog.body}}</textarea>
+    </div>
+    <br>
+    <text class="error">{{error}}</text>
+    <br>
+    <input type="submit">
   </form>
-  {% else %}
-    {{permission_error}}
-  {% endif %}
 {% endblock %}

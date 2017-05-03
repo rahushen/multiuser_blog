@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Login</h1>
-<br>
-<form method="post">
-Username <input type="text" name ="username" value="{{ username }}">
-<br>
-Password <input type="password" name ="password">
-<br>
-{{error}}
-<br>
-<input type="submit">
-</form>
-<h4>Don't have an account? <a href="/blog/signup">Register</a> here</h4>
+<h2>Login</h2>
+  <br>
+  <form method="post">
+    <div>
+      <label class="login-label">Username</label>
+      <input class="login-text" type="text" name ="username" value="{{ username }}">
+    </div>
+    <br>
+    <div>
+      <label class="login-label">Password</label>
+      <input class="login-text" type="password" name ="password">
+    </div>
+    <br>
+    <div>
+      <text class="error">{{error}}</text>
+    </div>
+  <br>
+  <input type="submit">
+  </form>
+  <br>
+  <h4>Don't have an account? <a href="/blog/signup">Register</a> here</h4>
 {% endblock %}

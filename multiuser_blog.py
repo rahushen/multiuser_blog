@@ -423,7 +423,7 @@ class AddComment(AppHandler):
                     comment_error = "Can't post empty comment."
                     comments = Comment.by_blog(post_id)
                     self.render('blogpost.html', blog=blog,
-                                comment_error=comment_error,
+                                add_comment_error=comment_error,
                                 user_id=self.user_id, comments=comments)
                 else:
                     comment = Comment(blog_id=int(post_id),
@@ -435,9 +435,6 @@ class AddComment(AppHandler):
                     # change
                     time.sleep(1)
                     self.redirect('/blog/%d' % int(post_id))
-                    # comments = Comment.by_blog(post_id)
-                    # self.render('blogpost.html', blog=blog,
-                    #            user_id=self.user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
@@ -486,7 +483,7 @@ class EditComment(AppHandler):
             if comment:
                 # Only the commentor can edit the comment.
                 if comment.user_id == self.user_id:
-                    self.render('editcomment.html', comment=comment)
+                    self.render('editcomment.html', text=comment.text)
                 else:
                     comment_error = """Only the Commenter
                                     can edit this comment."""
@@ -519,8 +516,7 @@ class EditComment(AppHandler):
                                 error="Comment doesn't exist")
             else:
                 error = "Comment cannot be blank."
-                self.render('editcomment.html', error=error,
-                            text=text)
+                self.render('editcomment.html', error=error)
         else:
             self.redirect('/blog/signup')
 

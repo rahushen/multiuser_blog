@@ -1,44 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="title"><h3>{{blog.title}}</h3></div>
+    <div><h3 class="blog-title">{{blog.title}}</h3></div>
     <br>
-    <div class="text"><pre>{{blog.body}}</pre></div>
+    <div><pre class="blog-text">{{blog.body}}</pre></div>
     <br>
-    <form method="post" action="/blog/{{blog.key().id()}}/togglelike">
-    {% if user_id in blog.liked %}
-    <input type="submit" value="Unlike">
-    {% else %}
-    <input type="submit" value="Like">
-    {% endif %}
+    <form class="like-form" method="post" action="/blog/{{blog.key().id()}}/togglelike">
+      {% if user_id in blog.liked %}
+        <input type="submit" value="Unlike">
+      {% else %}
+        <input type="submit" value="Like">
+      {% endif %}
     </form>
-    <form method="get" action="/blog/{{blog.key().id()}}/edit">
-    <input type="submit" value="Edit">
+    <form class="edit-form" method="get" action="/blog/{{blog.key().id()}}/edit">
+      <input type="submit" value="Edit">
     </form>
-    <form method="post" action="/blog/{{blog.key().id()}}/delete">
-    <input type="submit" value="Delete">
+    <form class="delete-form" method="post" action="/blog/{{blog.key().id()}}/delete">
+      <input type="submit" value="Delete">
     </form>
-    {{error}}
     <br>
-    <form method="post" action="/blog/{{blog.key().id()}}/addcomment">
-    Comment <textarea name="text" value=""></textarea>
+    <text class="error">{{error}}</text>
     <br>
-    <input type="submit" value="Add Comment">
-    </form>
+    <hr>
+    <div>
+      <form method="post" action="/blog/{{blog.key().id()}}/addcomment">
+        <textarea class ="comment-textarea-small" name="text" value=""></textarea>
+        <br>
+        <text class="error">{{add_comment_error}}</text>
+        <br>
+        <input type="submit" value="Add Comment">
+      </form>
+    </div>
     {% for comment in comments %}
       <hr>
-      <div class="title"><h3>{{comment.get_username()}}</h3></div>
+      <div><h3 class="comment-title">{{comment.get_username()}}</h3></div>
       <br>
-      <div class="text"><pre>{{comment.text}}</pre></div>
+      <div><pre class="comment-text">{{comment.text}}</pre></div>
       <br>
-      <form method="get" action="/blog/comment/{{comment.key().id()}}/edit">
-      <input type="submit" value="Edit">
+      <form class="edit-form" method="get" action="/blog/comment/{{comment.key().id()}}/edit">
+        <input type="submit" value="Edit">
       </form>
-      <form method="post" action="/blog/comment/{{comment.key().id()}}/delete">
-      <input type="submit" value="Delete">
+      <form class="delete-form" method="post" action="/blog/comment/{{comment.key().id()}}/delete">
+        <input type="submit" value="Delete">
       </form>
+      <br>
       {% if comment_error_id %}
         {% if comment_error_id == comment.key().id() %}
-          {{comment_error}}
+          <text class="error">{{comment_error}}</text>
         {% endif %}
       {% endif %}
     {% endfor %}
