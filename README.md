@@ -25,6 +25,8 @@ multiuser_blog/
 ├── base.html
 ├── blog.html
 ├── blogpost.html
+├── css
+│   └── style.css
 ├── editblog.html
 ├── editcomment.html
 ├── index.yaml
