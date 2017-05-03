@@ -269,10 +269,14 @@ class AppHandler(webapp2.RequestHandler):
 
 
 class NewBlogPage(AppHandler):
+    """
+    Handler to create a new blog page
+    """
     def get(self):
         if self.user_id:
             self.render('newblog.html')
         else:
+            # user not logged in redirect to signup page
             self.redirect('/blog/signup')
 
     def post(self):
@@ -280,6 +284,7 @@ class NewBlogPage(AppHandler):
             title = self.request.get('subject')
             text = self.request.get('content')
             if title and text:
+                # both title and text are required
                 blog = Blog(title=title, body=text, user_id=self.user_id)
                 blog_id = blog.put().id()
                 self.redirect("/blog/%d" % blog_id)
@@ -292,11 +297,16 @@ class NewBlogPage(AppHandler):
 
 
 class BlogEntryPage(AppHandler):
+    """
+    Handler to display a particular blog entry.
+    """
     def get(self, post_id):
+        # post_id is the blog id
         if self.user_id:
             blog = Blog.get_by_id(int(post_id))
-            comments = Comment.by_blog(post_id)
             if blog:
+                # Fetch all comments that are tied to the blog.
+                comments = Comment.by_blog(post_id)
                 self.render('blogpost.html', blog=blog, user_id=self.user_id,
                             comments=comments)
             else:
@@ -306,18 +316,23 @@ class BlogEntryPage(AppHandler):
 
 
 class EditBlogPage(AppHandler):
+    """
+    Handler to display/process the form to edit a blog entry.
+    """
     def get(self, post_id):
         if self.user_id:
             blog = Blog.by_id(int(post_id))
-            comments = Comment.by_blog(post_id)
             if blog:
+                # only the blog author can edit it
                 if blog.user_id == self.user_id:
                     self.render('editblog.html', blog=blog)
                 else:
                     error = 'Only the Blog owner can edit this blog post.'
+                    comments = Comment.by_blog(post_id)
                     self.render('blogpost.html', blog=blog, error=error,
                                 user_id=self.user_id, comments=comments)
             else:
+                # Invalid blog - display error page
                 self.render('permissionerror.html')
         else:
             self.redirect('/blog/signup')
@@ -341,17 +356,24 @@ class EditBlogPage(AppHandler):
 
 
 class DeleteBlogPage(AppHandler):
+    """
+    Handler to delete a blog entry.
+    """
     def post(self, post_id):
         if self.user_id:
             blog = Blog.by_id(int(post_id))
-            comments = Comment.by_blog(post_id)
             if blog:
+                # Only the blog author can delete the blog
                 if blog.user_id == self.user_id:
                     db.delete(blog.key())
+                    # Adding a sleep of 1 second here
+                    # Observation - the database takes a while to reflect the
+                    # change
                     time.sleep(1)
                     self.redirect('/blog')
                 else:
                     error = 'Only the Blog owner can delete this blog post.'
+                    comments = Comment.by_blog(post_id)
                     self.render('blogpost.html', blog=blog, error=error,
                                 user_id=self.user_id, comments=comments)
             else:
@@ -361,14 +383,18 @@ class DeleteBlogPage(AppHandler):
 
 
 class ToggleLike(AppHandler):
+    """
+    Handler to like/unlike a blog entry.
+    """
     def post(self, post_id):
         if self.user_id:
             user_id = self.user_id
             blog = Blog.by_id(int(post_id))
-            comments = Comment.by_blog(post_id)
             if blog:
+                # Blog author can't like their own posts.
                 if blog.user_id == user_id:
                     error = "You can't like your own posts."
+                    comments = Comment.by_blog(post_id)
                     self.render('blogpost.html', blog=blog, error=error,
                                 user_id=user_id, comments=comments)
                 else:
@@ -386,6 +412,9 @@ class ToggleLike(AppHandler):
 
 
 class AddComment(AppHandler):
+    """
+    Handler to add comments to a blog.
+    """
     def post(self, post_id):
         if self.user_id:
             blog = Blog.by_id(int(post_id))
@@ -402,10 +431,14 @@ class AddComment(AppHandler):
                                       user_id=self.user_id,
                                       text=text)
                     comment.put()
+                    # Adding a sleep of 1 second here
+                    # Observation - the database takes a while to reflect the
+                    # change
                     time.sleep(1)
-                    comments = Comment.by_blog(post_id)
-                    self.render('blogpost.html', blog=blog,
-                                user_id=self.user_id, comments=comments)
+                    self.redirect('/blog/%d' % int(post_id))
+                    # comments = Comment.by_blog(post_id)
+                    # self.render('blogpost.html', blog=blog,
+                    #            user_id=self.user_id, comments=comments)
             else:
                 self.render('permissionerror.html')
         else:
@@ -413,12 +446,17 @@ class AddComment(AppHandler):
 
 
 class DeleteComment(AppHandler):
+    """
+    Handler to delete a comment.
+    """
     def post(self, post_id):
+        # post_id is the comment id.
         if self.user_id:
             comment = Comment.by_id(int(post_id))
             if comment:
                 blog_id = comment.blog_id
                 blog = Blog.by_id(blog_id)
+                # Only the commentor can delete the comment.
                 if comment.user_id == self.user_id:
                     db.delete(comment.key())
                     time.sleep(1)
@@ -440,10 +478,14 @@ class DeleteComment(AppHandler):
 
 
 class EditComment(AppHandler):
+    """
+    Blog Handler to delete a comment.
+    """
     def get(self, post_id):
         if self.user_id:
             comment = Comment.by_id(int(post_id))
             if comment:
+                # Only the commentor can edit the comment.
                 if comment.user_id == self.user_id:
                     self.render('editcomment.html', comment=comment)
                 else:
@@ -468,10 +510,14 @@ class EditComment(AppHandler):
             text = self.request.get('content')
             if text:
                 comment = Comment.by_id(int(post_id))
-                comment.text = text
-                comment.put()
-                time.sleep(1)
-                self.redirect("/blog/%d" % comment.blog_id)
+                if comment:
+                    comment.text = text
+                    comment.put()
+                    time.sleep(1)
+                    self.redirect("/blog/%d" % comment.blog_id)
+                else:
+                    self.render('permissionerror.html',
+                                error="Comment doesn't exist")
             else:
                 error = "Comment cannot be blank."
                 self.render('editcomment.html', error=error,
@@ -481,14 +527,25 @@ class EditComment(AppHandler):
 
 
 class BlogPage(AppHandler):
+    """
+    Handler that displays the main blog page.
+    Only the 10 latest blogs are displayed.
+    """
     def get(self):
+        # fetch the 10 latest blog entries.
         query = db.GqlQuery("SELECT * FROM Blog ORDER BY created DESC")
         blogs = query.fetch(10)
         self.render('blog.html', blogs=blogs)
 
 
 class Register(AppHandler):
+    """
+    Handler that displays/processes the Registration form.
+    """
     def process_form(self, post_data):
+        """
+        Utility function to process the form and generate errors.
+        """
         username = post_data[0]
         password = post_data[1]
         verify = post_data[2]
@@ -524,12 +581,17 @@ class Register(AppHandler):
                 self.render_dict('register.html', errors)
             else:
                 user = User.register(data[0], data[1], data[3])
+                # add new user to the database.
                 user.put()
+                # create cookie for the user
                 self.login(user)
                 self.redirect('/blog/welcome')
 
 
 class Login(AppHandler):
+    """
+    Handler that displays/processes the login form.
+    """
     def get(self):
         self.render('login.html')
 
@@ -546,12 +608,18 @@ class Login(AppHandler):
 
 
 class Logout(AppHandler):
+    """
+    Handler to logout a user and delete the cookie.
+    """
     def get(self):
         self.logout()
         self.redirect('/blog/signup')
 
 
 class Welcome(AppHandler):
+    """
+    Handler to display the welcome page after a user logs in.
+    """
     def get(self):
         if self.user_id:
             user = User.by_id(self.user_id)
@@ -561,10 +629,14 @@ class Welcome(AppHandler):
 
 
 class PermissionErr(AppHandler):
+    """
+    Handler to show an error page.
+    """
     def get(self):
         self.render('permissionerror.html')
 
 
+# URL to handler mapping
 app = webapp2.WSGIApplication([
     (r'/blog/?', BlogPage),
     (r'/blog/newpost/?', NewBlogPage),
