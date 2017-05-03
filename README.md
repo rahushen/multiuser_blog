@@ -24,7 +24,11 @@ multiuser_blog/
 ├── app.yaml
 ├── base.html
 ├── blog.html
+├── blog.py
+├── blog.pyc
 ├── blogpost.html
+├── comment.py
+├── comment.pyc
 ├── css
 │   └── style.css
 ├── editblog.html
@@ -36,6 +40,10 @@ multiuser_blog/
 ├── newblog.html
 ├── permissionerror.html
 ├── register.html
+├── user.py
+├── user.pyc
+├── utils.py
+├── utils.pyc
 └── welcome.html
 ```
 
