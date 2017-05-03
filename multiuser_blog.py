@@ -276,7 +276,7 @@ class NewBlogPage(AppHandler):
             self.render('newblog.html')
         else:
             # user not logged in redirect to signup page
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
     def post(self):
         if self.user_id:
