@@ -56,7 +56,7 @@ Then open the browser and navigate to http://localhost:8080/blog/
 To visit the blog on the internet:
 
 Open the browser and navigate to https://hello-world-162506.appspot.com/blog/
-
+```
 Use the following URLS to achieve the following actions:
 
 <server>/blog - get the homepage - the 10 latest blogs
@@ -66,15 +66,15 @@ Use the following URLS to achieve the following actions:
 <server>/blog/logout - to logout a user
 <server>/blog/welcome - to the welcome page for the user
 <server>/blog/newpost - allows a user to create a new blog
-
+```
 where <server> is http://localhost:8080 for local dev app server and https://hello-world-162506.appspot.com on the internet.
-
+```
 Several Features are available for a user:
 Like/Unlike - A user can like/unlike another user's blog using the Like/Unlike button on the blog page.
 Edit/Delete a Blog - A user can edit/delete his own blog using the edit and delete button on the blog page respectively.
 Comments - All users can comment on any blog using the 'Add comment' link on a blog.
 Edit/Delete a Comment - A user can edit/delete his own comment using the edit and delete button on the comment respectively.
-
+```
 ## Creator
 
 **Rahul shenoy**
