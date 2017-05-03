@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <h2>Edit Blog</h2>
-  <form method="post">
+  <form class="edit-form" method="post">
     <div>
       <label class="newpost-label">Title</label>
       <input class="newpost-text" name="subject" type="text" value="{{blog.title}}">
@@ -15,5 +15,6 @@
     <text class="error">{{error}}</text>
     <br>
     <input type="submit">
+    <input type="button" onclick="location.href='/blog/{{blog.key().id()}}';" value="Cancel" />
   </form>
 {% endblock %}

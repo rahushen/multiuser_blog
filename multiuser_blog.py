@@ -483,7 +483,7 @@ class EditComment(AppHandler):
             if comment:
                 # Only the commentor can edit the comment.
                 if comment.user_id == self.user_id:
-                    self.render('editcomment.html', text=comment.text)
+                    self.render('editcomment.html', comment=comment)
                 else:
                     comment_error = """Only the Commenter
                                     can edit this comment."""

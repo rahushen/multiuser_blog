@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
   <h2>Edit Comment</h2>
-  <form method="post">
+  <form class="edit-form" method="post">
     <div>
       <label class="comment-label">Comment</label>
-      <textarea class ="comment-textarea" name="content" value="">{{text}}</textarea>
+      <textarea class ="comment-textarea" name="content" value="">{{comment.text}}</textarea>
     </div>
     <br>
     <text class="error">{{error}}</text>
     <br>
     <input type="submit" value="Save">
+    <input type="button" onclick="location.href='/blog/{{comment.blog_id}}';" value="Cancel" />
   </form>
 {% endblock %}
