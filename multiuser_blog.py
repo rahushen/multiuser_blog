@@ -198,9 +198,8 @@ class Comment(db.Model):
     @classmethod
     def by_blog(cls, blog_id):
         """Fetches the latest 100 comments by blog id and returns it."""
-        query = db.GqlQuery('''SELECT * FROM Comment WHERE blog_id = %s
-                            ORDER BY created DESC''' % blog_id)
-        comments = query.fetch(100)
+        query = Comment.all().filter("blog_id =", int(blog_id))
+        comments = query.order('-created').run(limit=100)
         return comments
 
     def get_username(self):
@@ -533,8 +532,7 @@ class BlogPage(AppHandler):
     """
     def get(self):
         # fetch the 10 latest blog entries.
-        query = db.GqlQuery("SELECT * FROM Blog ORDER BY created DESC")
-        blogs = query.fetch(10)
+        blogs = Blog.all().order('-created').run(limit=10)
         self.render('blog.html', blogs=blogs)
 
 
