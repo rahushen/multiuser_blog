@@ -292,7 +292,7 @@ class NewBlogPage(AppHandler):
                 self.render('newblog.html', error=error, title=title,
                             text=text)
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class BlogEntryPage(AppHandler):
@@ -311,7 +311,7 @@ class BlogEntryPage(AppHandler):
             else:
                 self.redirect('/blog/permissionerror/')
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class EditBlogPage(AppHandler):
@@ -334,7 +334,7 @@ class EditBlogPage(AppHandler):
                 # Invalid blog - display error page
                 self.render('permissionerror.html')
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
     def post(self, post_id):
         if self.user_id:
@@ -351,7 +351,7 @@ class EditBlogPage(AppHandler):
                 self.render('editblog.html', error=error, title=title,
                             text=text)
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class DeleteBlogPage(AppHandler):
@@ -378,7 +378,7 @@ class DeleteBlogPage(AppHandler):
             else:
                 self.render('permissionerror.html')
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class ToggleLike(AppHandler):
@@ -407,7 +407,7 @@ class ToggleLike(AppHandler):
             else:
                 self.render('permissionerror.html')
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class AddComment(AppHandler):
@@ -438,7 +438,7 @@ class AddComment(AppHandler):
             else:
                 self.render('permissionerror.html')
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class DeleteComment(AppHandler):
@@ -470,7 +470,7 @@ class DeleteComment(AppHandler):
                 self.render('permissionerror.html',
                             error="Comment doesn't exist")
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class EditComment(AppHandler):
@@ -499,7 +499,7 @@ class EditComment(AppHandler):
                 self.render('permissionerror.html',
                             error="Comment doesn't exist")
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
     def post(self, post_id):
         if self.user_id:
@@ -518,7 +518,7 @@ class EditComment(AppHandler):
                 error = "Comment cannot be blank."
                 self.render('editcomment.html', error=error)
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class BlogPage(AppHandler):
@@ -607,7 +607,7 @@ class Logout(AppHandler):
     """
     def get(self):
         self.logout()
-        self.redirect('/blog/signup')
+        self.redirect('/blog/login')
 
 
 class Welcome(AppHandler):
@@ -619,7 +619,7 @@ class Welcome(AppHandler):
             user = User.by_id(self.user_id)
             self.render('welcome.html', username=user.username)
         else:
-            self.redirect('/blog/signup')
+            self.redirect('/blog/login')
 
 
 class PermissionErr(AppHandler):
