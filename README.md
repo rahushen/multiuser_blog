@@ -57,7 +57,7 @@ To visit the blog on the internet:
 
 Open the browser and navigate to https://hello-world-162506.appspot.com/blog/
 ```
-Use the following URLS to achieve the following actions:
+Use the following URLs to achieve the following actions:
 
 <server>/blog - get the homepage - the 10 latest blogs
 <server>/blog/<blog_id> - to get a specific blog page
@@ -67,7 +67,7 @@ Use the following URLS to achieve the following actions:
 <server>/blog/welcome - to the welcome page for the user
 <server>/blog/newpost - allows a user to create a new blog
 ```
-where <server> is http://localhost:8080 for local dev app server and https://hello-world-162506.appspot.com on the internet.
+where `server` is http://localhost:8080 for local dev app server and https://hello-world-162506.appspot.com on the internet.
 ```
 Several Features are available for a user:
 Like/Unlike - A user can like/unlike another user's blog using the Like/Unlike button on the blog page.
